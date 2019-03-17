@@ -53,7 +53,7 @@ def record(command, writer, env=os.environ, rec_stdin=False):
     def _handle_stdin_read(data):
         '''Handles new data on child process stdin.'''
 
-        if data == b'\x02': # ctrl+b
+        if data == b'\x02':  # ctrl+b
             writer.write_break()
         else:
             _write_master(data)
