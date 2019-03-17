@@ -145,6 +145,9 @@ class writer():
     def write_stdin(self, ts, data):
         self.write_event(ts, 'i', data)
 
+    def write_break(self, ts):
+        self.write_event(ts, 'b', '')
+
     def __write_line(self, obj):
         line = json.dumps(obj, ensure_ascii=False, indent=None, separators=(', ', ': '))
         self.file.write(line + '\n')
@@ -190,3 +193,7 @@ class async_writer():
     def write_stdout(self, data):
         ts = time.time() - self.start_time
         self.queue.put([ts, 'o', data])
+
+    def write_break(self):
+        ts = time.time() - self.start_time
+        self.queue.put([ts, 'b', ''])

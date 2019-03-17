@@ -37,3 +37,6 @@ class writer():
 
     def write_stdout(self, data):
         self.queue.put(data)
+
+    def write_break(self):
+        pass
