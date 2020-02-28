@@ -19,7 +19,7 @@ class Player:
     def _play(self, asciicast, idle_time_limit, speed, stdin):
         idle_time_limit = idle_time_limit or asciicast.idle_time_limit
 
-        stdout = asciicast.stdout_events()
+        stdout = asciicast.events()
         stdout = ev.to_relative_time(stdout)
         stdout = ev.cap_relative_time(stdout, idle_time_limit)
         stdout = ev.to_absolute_time(stdout)
@@ -32,41 +32,27 @@ class Player:
 
         for t, _type, text in stdout:
             delay = t - (time.time() - base_time)
-
-            while stdin and not ctrl_c and delay > 0:
-                if paused:
-                    while True:
-                        data = read_blocking(stdin.fileno(), 1000)
-
-                        if 0x03 in data:  # ctrl-c
-                            ctrl_c = True
-                            break
-
-                        if 0x20 in data:  # space
-                            paused = False
-                            base_time = base_time + (time.time() - pause_time)
-                            break
-
-                        if 0x2e in data:  # period (dot)
-                            delay = 0
-                            pause_time = time.time()
-                            base_time = pause_time - t
-                            break
-                else:
-                    data = read_blocking(stdin.fileno(), delay)
-
-                    if not data:
-                        break
-
+            if _type == "i":
+                while True:
+                    # Wait for a keystroke from the user. FOREVER. Well, for a year.
+                    data = read_blocking(stdin.fileno(), 365 * 24 * 60 * 60)
                     if 0x03 in data:  # ctrl-c
                         ctrl_c = True
-                        break
+                    elif "\r" in text and b"\r" not in data:
+                        # If there's a newline in the file but none in the keyboard, wait for one.
+                        continue
+                    # Reset the delay so the character is printed right away.
+                    base_time = time.time() - t
+                    break  # Don't wait for any more characters.
+                continue  # Don't print this character.
 
-                    if 0x20 in data:  # space
-                        paused = True
-                        pause_time = time.time()
-                        slept = t - (pause_time - base_time)
-                        delay = delay - slept
+            while stdin and not ctrl_c and delay > 0:
+                data = read_blocking(stdin.fileno(), delay)
+
+                if 0x03 in data:  # ctrl-c
+                    ctrl_c = True
+
+                break
 
             if ctrl_c:
                 break
